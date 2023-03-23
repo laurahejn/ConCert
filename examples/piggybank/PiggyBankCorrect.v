@@ -87,20 +87,26 @@ Section SafetyProperties.
   
   Open Scope program_scope.
 
-  (** ** Outgoing acts facts *)
-  (** If a contract emits self calls then they are for the receive entrypoints (which do not exits) *)
-  Lemma only_getter_self_calls bstate caddr :
+  Lemma address_eqb_false `{ChainBase} x y: address_eqb x y = false -> x <> y.
+  Proof.
+    destruct (address_eqb_spec x y) as [->|]; auto.
+  Qed.
+
+  Lemma address_neqb_false `{ChainBase} x y: address_neqb x y = false <-> x = y.
+  Proof.
+    split; unfold address_neqb in *; now destruct (address_eqb_spec x y) as [->|].
+  Qed.
+
+  (** Contract never calls itself *)
+  Lemma no_self_calls bstate caddr :
     reachable bstate ->
     env_contracts bstate caddr = Some (contract : WeakContract) ->
     Forall (fun act_body =>
       match act_body with
-      | act_transfer to _ => False
-      | act_call to _ msg => to = caddr ->
-          (msg = serialize (Insert)) \/
-          (msg = serialize (Smash)) 
+      | act_transfer to _ => (to =? caddr)%address = false
       | _ => False
       end) (outgoing_acts bstate caddr).
-  Proof. Admitted. (*
+  Proof. 
     contract_induction; intros; auto.
     - now inversion IH.
     - apply Forall_app; split; auto.
@@ -109,54 +115,16 @@ Section SafetyProperties.
       destruct m; unfold PiggyBank.receive in receive_some;
       [unfold insert in receive_some | unfold smash in receive_some]; 
       [insert_reduce prev_state ctx | smash_reduce prev_state ctx];
-      inversion receive_some; eauto.
-      admit.
-      
+      inversion receive_some; eauto. 
+      apply address_neqb_false in Eowner. rewrite Eowner in from_other.
+      now apply address_eq_ne in from_other. 
     - inversion_clear IH as [|? ? head_not_me tail_not_me].
-      destruct head;
-        try contradiction.
-      destruct action_facts as (? & ? & ? & ?).
-      subst.
-      destruct head_not_me as [[] | []]; auto;
-        subst;
-        simpl in *;
-        unfold PiggyBank.receive in receive_some;
-        [unfold insert in receive_some | unfold smash in receive_some]. 
-      [insert_reduce prev_state ctx | smash_reduce prev_state ctx].
-      inversion receive_some; eauto.
-        try now contract_simpl.
+      apply Forall_app; split; auto; clear tail_not_me.
+      destruct head; try contradiction.
+      destruct action_facts as [? [? ?]].
+      destruct_address_eq; congruence.
     - now rewrite <- perm.
     - solve_facts.
-  Qed.*)
-
-  (** Contract never calls itself *)
-  Lemma no_self_calls : forall bstate origin from_addr to_addr amount msg acts ctx prev_state new_state resp_acts,
-    reachable bstate ->
-    env_contracts bstate to_addr = Some (contract : WeakContract) ->
-    chain_state_queue bstate =
-    {| act_origin := origin;
-      act_from := from_addr;
-      act_body :=
-        match msg with
-        | Some msg => act_call to_addr amount msg
-        | None => act_transfer to_addr amount
-      end |} :: acts ->
-    wc_receive contract bstate ctx prev_state msg = Ok (new_state, resp_acts) ->
-    from_addr <> to_addr.
-  Proof.
-    intros * reach deployed queue receive_some.
-    apply only_getter_self_calls in deployed as no_self_calls; auto.
-    unfold outgoing_acts in no_self_calls.
-    rewrite queue in no_self_calls.
-    cbn in no_self_calls.
-    destruct_address_eq; auto.
-    inversion_clear no_self_calls as [|? ? hd _].
-    destruct msg; auto.
-    destruct hd as [[] | []];
-      auto; subst;
-      eapply wc_receive_strong in receive_some as (_ & ? & _ & _ & msg_correct & _);
-      destruct_match in msg_correct; auto.
-      unfold Bool.reflect.
   Qed.
 
   (** This is already proved above and not really a safety property *)
@@ -312,12 +280,18 @@ Section SafetyProperties.
       now destruct fact.
     - specialize (IH H). rewrite IH in perm. now eapply Permutation.Permutation_nil in perm.
     - solve_facts.
-      rewrite deployed in *;
-      match goal with
-        | H : Some ?x = Some _ |- _ => inversion H; subst x; clear H
-      end. 
-      eapply no_self_calls; eauto.
-      now constructor.
+      apply trace_reachable in from_reachable.
+      pose proof (no_self_calls bstate_from to_addr ltac:(assumption) ltac:(assumption))
+           as all.
+      unfold outgoing_acts in *.
+      rewrite queue_prev in *.
+      cbn in all.
+      destruct_address_eq; cbn in *; auto.
+      inversion_clear all as [|? ? hd _].
+      destruct msg.
+      + contradiction.
+      + rewrite address_eq_refl in hd.
+        congruence.
   Qed.
 
   (** When the PiggyBank is smashed its balance needs to remain zero *)    
@@ -374,9 +348,24 @@ Section SafetyProperties.
 
       + specialize no_outgoing_actions_when_intact as (? & ?); eauto.
         * now constructor.
-        * destruct H.   
-      + eapply no_self_calls; eauto.
-        now constructor.
+        * intros intact. destruct H.
+          unfold contract_state in *.
+          destruct (env_contract_states bstate_from to_addr); try discriminate.
+          inversion H as [s_is_some_x]. rewrite deployed_state0 in s_is_some_x.
+          inversion s_is_some_x as [cstate_eq_x].
+          now subst.   
+      + apply trace_reachable in from_reachable.
+        pose proof (no_self_calls bstate_from to_addr ltac:(assumption) ltac:(assumption))
+             as all.
+        unfold outgoing_acts in *.
+        rewrite queue_prev in *.
+        cbn in all.
+        destruct_address_eq; cbn in *; auto.
+        inversion_clear all as [|? ? hd _].
+        destruct msg.
+        * contradiction.
+        * rewrite address_eq_refl in hd.
+          congruence.
   Qed.
 
   Lemma balance_is_zero_when_smashed : 
