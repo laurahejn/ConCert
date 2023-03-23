@@ -16,8 +16,6 @@ From Coq Require Import ZArith.
 From Coq Require Import Lia.
 
 (** A few tactics to make the proofs more manageable and more transparent *)
-Tactic Notation "contract_simpl" := contract_simpl receive init.
-
 Ltac insert_reduce prev_state ctx := 
   destruct (ctx_amount ctx <=? 0)%Z eqn:Epos; try discriminate; 
   destruct (is_smashed prev_state) eqn:Esmash; try discriminate.
@@ -294,6 +292,8 @@ Section SafetyProperties.
         congruence.
   Qed.
 
+  Search ((?x <=? ?y) = false).
+
   (** When the PiggyBank is smashed its balance needs to remain zero *)    
   Lemma balance_is_zero_when_smashed' : 
     forall bstate caddr (trace : ChainTrace empty_state bstate),
@@ -334,7 +334,8 @@ Section SafetyProperties.
       + specialize balance_on_chain' as (state1 & construct1 & balance); eauto.
         now constructor.
         intros state_intact. rewrite address_eq_refl. 
-        specialize no_outgoing_actions_when_intact as (state2 & [construct2 act]); eauto; try now constructor.
+        specialize no_outgoing_actions_when_intact as (state2 & [construct2 act]); eauto. 
+        now constructor.
         unfold contract_state in *.
         destruct (env_contract_states bstate_from to_addr); try discriminate. 
         inversion construct1 as [some_s_is_state1]. inversion construct2 as [some_s_is_state2].
@@ -342,9 +343,21 @@ Section SafetyProperties.
         inversion some_s_is_state1 as [cstate_is_state1]. inversion some_s_is_state2 as [cstate_is_state2]. 
         rewrite <- cstate_is_state2 in act.
         specialize (act state_intact). rewrite act in balance. rewrite <- balance. cbn.
-        destruct (to_addr =? from_addr)%address eqn:addr.
-        * lia.
-        * admit.
+        destruct (to_addr =? from_addr)%address eqn:addr. 
+        lia.
+
+        eapply wc_receive_strong in receive_some as (A & B & C & D & msg_correct & F & G).
+        cbn in *.
+        unfold PiggyBank.receive in G.
+        destruct B; try discriminate.
+        destruct msg; try discriminate. 
+        destruct m;
+        [unfold insert in G | unfold smash in G];
+        [insert_reduce A {|ctx_origin := origin;ctx_from := from_addr;ctx_contract_address := to_addr;ctx_contract_balance := env_account_balances bstate_to to_addr;ctx_amount := amount|} 
+        | smash_reduce A {|ctx_origin := origin;ctx_from := from_addr;ctx_contract_address := to_addr;ctx_contract_balance := env_account_balances bstate_to to_addr;ctx_amount := amount|}];
+        inversion G;
+        cbn in *; intuition.
+        apply Z.leb_gt in Epos.
 
       + specialize no_outgoing_actions_when_intact as (? & ?); eauto.
         * now constructor.
