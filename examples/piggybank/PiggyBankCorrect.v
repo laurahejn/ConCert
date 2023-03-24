@@ -292,8 +292,6 @@ Section SafetyProperties.
         congruence.
   Qed.
 
-  Search ((?x <=? ?y) = false).
-
   (** When the PiggyBank is smashed its balance needs to remain zero *)    
   Lemma balance_is_zero_when_smashed' : 
     forall bstate caddr (trace : ChainTrace empty_state bstate),
@@ -318,7 +316,7 @@ Section SafetyProperties.
       + unfold is_smashed in Esmash. destruct prev_state, new_state.
         inversion H1. cbn in *. intuition.
       + instantiate (CallFacts := fun _ ctx prev_state queue _ =>
-        (prev_state.(piggyState) = Intact -> ctx_contract_balance ctx = balance prev_state) /\ 
+        (prev_state.(piggyState) = Intact -> ctx_contract_balance ctx - ctx_amount ctx = balance prev_state) /\ 
         (prev_state.(piggyState) = Intact -> queue = [])
         /\ ctx_from ctx <> ctx_contract_address ctx).
         destruct facts as [Hamount [Hqueue _]].
@@ -331,9 +329,9 @@ Section SafetyProperties.
       match goal with
         | H : Some ?x = Some _ |- _ => inversion H; subst x; clear H
       end.
-      + specialize balance_on_chain' as (state1 & construct1 & balance); eauto.
+      + rewrite address_eq_refl. intros state_intact.
+        specialize balance_on_chain' as (state1 & construct1 & balance); eauto.
         now constructor.
-        intros state_intact. rewrite address_eq_refl. 
         specialize no_outgoing_actions_when_intact as (state2 & [construct2 act]); eauto. 
         now constructor.
         unfold contract_state in *.
@@ -343,7 +341,7 @@ Section SafetyProperties.
         inversion some_s_is_state1 as [cstate_is_state1]. inversion some_s_is_state2 as [cstate_is_state2]. 
         rewrite <- cstate_is_state2 in act.
         specialize (act state_intact). rewrite act in balance. rewrite <- balance. cbn.
-        destruct (to_addr =? from_addr)%address eqn:addr. 
+        destruct (to_addr =? from_addr)%address eqn:addr.
         lia.
 
         eapply wc_receive_strong in receive_some as (A & B & C & D & msg_correct & F & G).
@@ -355,9 +353,10 @@ Section SafetyProperties.
         [unfold insert in G | unfold smash in G];
         [insert_reduce A {|ctx_origin := origin;ctx_from := from_addr;ctx_contract_address := to_addr;ctx_contract_balance := env_account_balances bstate_to to_addr;ctx_amount := amount|} 
         | smash_reduce A {|ctx_origin := origin;ctx_from := from_addr;ctx_contract_address := to_addr;ctx_contract_balance := env_account_balances bstate_to to_addr;ctx_amount := amount|}];
-        inversion G;
-        cbn in *; intuition.
-        apply Z.leb_gt in Epos.
+        inversion G; cbn in *; intuition.
+        
+        pose proof (no_self_calls bstate_from to_addr ltac:(assumption) ltac:(assumption))
+             as all.
 
       + specialize no_outgoing_actions_when_intact as (? & ?); eauto.
         * now constructor.
