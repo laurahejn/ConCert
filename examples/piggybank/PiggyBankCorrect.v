@@ -2,15 +2,18 @@
 (** Proofs for Piggybank contract defined in [ConCert.Examples.piggybank.piggybank]. *)
 
 From ConCert.Examples.PiggyBank Require Import PiggyBank.
+
 From ConCert.Utils Require Import RecordUpdate.
 From ConCert.Utils Require Import Automation.
 From ConCert.Utils Require Import Extras.
+
 From ConCert.Execution Require Import Blockchain.
 From ConCert.Execution Require Import ContractCommon.
 From ConCert.Execution Require Import Monad.
 From ConCert.Execution Require Import ResultMonad.
 From ConCert.Execution Require Import Serializable.
-From ConCert.Execution Require Import ContractCommon.
+From ConCert.Execution Require Import BuildUtils.
+
 From Coq Require Import List. Import ListNotations.
 From Coq Require Import ZArith.
 From Coq Require Import Lia.
@@ -320,8 +323,9 @@ Section SafetyProperties.
         (prev_state.(piggyState) = Intact -> queue = [])
         /\ ctx_from ctx <> ctx_contract_address ctx).
         destruct facts as [Hamount [Hqueue _]].
-        unfold is_smashed in Esmash. destruct prev_state.(piggyState) eqn:Estate; try discriminate. 
-        rewrite Hqueue, Hamount; try reflexivity. cbn. lia.
+        unfold is_smashed in Esmash. destruct prev_state.(piggyState) eqn:Estate; try discriminate.
+        apply neq_false_eq in Enonzero. rewrite Enonzero in Hamount. 
+        rewrite Hqueue, <- Hamount; try reflexivity. cbn. lia.
     - now destruct facts.
     - now erewrite sumZ_permutation in IH by eauto.
     - solve_facts.
@@ -340,23 +344,23 @@ Section SafetyProperties.
         rewrite deployed_state0 in *. 
         inversion some_s_is_state1 as [cstate_is_state1]. inversion some_s_is_state2 as [cstate_is_state2]. 
         rewrite <- cstate_is_state2 in act.
-        specialize (act state_intact). rewrite act in balance. rewrite <- balance. cbn.
+        specialize (act state_intact). rewrite act in balance. rewrite <- balance.
         destruct (to_addr =? from_addr)%address eqn:addr.
-        lia.
-
-        eapply wc_receive_strong in receive_some as (A & B & C & D & msg_correct & F & G).
-        cbn in *.
-        unfold PiggyBank.receive in G.
-        destruct B; try discriminate.
-        destruct msg; try discriminate. 
-        destruct m;
-        [unfold insert in G | unfold smash in G];
-        [insert_reduce A {|ctx_origin := origin;ctx_from := from_addr;ctx_contract_address := to_addr;ctx_contract_balance := env_account_balances bstate_to to_addr;ctx_amount := amount|} 
-        | smash_reduce A {|ctx_origin := origin;ctx_from := from_addr;ctx_contract_address := to_addr;ctx_contract_balance := env_account_balances bstate_to to_addr;ctx_amount := amount|}];
-        inversion G; cbn in *; intuition.
-        
+        * apply trace_reachable in from_reachable.
         pose proof (no_self_calls bstate_from to_addr ltac:(assumption) ltac:(assumption))
              as all.
+        unfold outgoing_acts in *.
+        rewrite queue_prev in *.
+        cbn in all.
+        destruct_address_eq; cbn in *; auto.
+        inversion_clear all as [|? ? hd _].
+        destruct msg.
+        ** contradiction.
+        ** rewrite address_eq_refl in hd.
+          congruence.
+        ** discriminate.
+        * cbn. lia.
+
 
       + specialize no_outgoing_actions_when_intact as (? & ?); eauto.
         * now constructor.
@@ -395,4 +399,23 @@ Section SafetyProperties.
     rewrite act in balance. cbn in *.
     exists cstate. intuition. 
   Qed.
+
+  Lemma : 
+    forall bstate caddr (trace : ChainTrace empty_state bstate),
+    reachable bstate ->
+    emptyable (chain_state_queue bstate) ->
+    env_contracts bstate caddr = Some (PiggyBank.contract : WeakContract) ->
+    exists cstate,
+      contract_state bstate caddr = Some cstate ->
+        exists bstate', 
+          reachable_through bstate bstate' /\
+          env_contracts bstate caddr = Some (PiggyBank.contract : WeakContract) /\
+          emptyable (chain_state_queue bstate') /\
+          exists cstate',
+            contract_state bstate' caddr = Some cstate' /\
+            (env_account_balances bstate' caddr = 0)%Z.
+  Proof.
+    
+  Qed.
+  
 End SafetyProperties.
