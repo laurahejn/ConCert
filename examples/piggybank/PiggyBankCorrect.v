@@ -400,7 +400,7 @@ Section SafetyProperties.
     exists cstate. intuition. 
   Qed.
 
-  Lemma : 
+  Lemma smash_poss : 
     forall bstate caddr (trace : ChainTrace empty_state bstate),
     reachable bstate ->
     emptyable (chain_state_queue bstate) ->
@@ -415,8 +415,7 @@ Section SafetyProperties.
             contract_state bstate' caddr = Some cstate' /\
             (env_account_balances bstate' caddr = 0)%Z.
   Proof.
-    
-  Qed.
+  Admitted.
   
 End SafetyProperties.
 
