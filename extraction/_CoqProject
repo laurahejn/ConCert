@@ -3,30 +3,18 @@
 
 -R ../utils/theories ConCert.Utils
 -R ../execution/theories ConCert.Execution
--R ../typed-extraction/theories MetaCoq.TypedExtraction
 
 -Q theories ConCert.Extraction
 theories/CameLIGOExtract.v
 theories/CameLIGOPretty.v
 theories/Common.v
 theories/ConcordiumExtract.v
-theories/ElmExtract.v
-theories/ExtractExtraction.v
 theories/LiquidityExtract.v
 theories/LiquidityPretty.v
-theories/PluginExtract.v
 theories/PrettyPrinterMonad.v
-theories/Printing.v
-theories/RustExtract.v
 theories/SpecializeChainBase.v
-theories/TopLevelFixes.v
 
 -Q tests ConCert.Extraction.Tests
-tests/Ack.v
 tests/CameLIGOExtractionTests.v
-tests/ElmExtractExamples.v
-tests/ElmExtractTests.v
-tests/ElmForms.v
 tests/RecordExtractionLiquidityTests.v
-tests/RustExtractTests.v
 tests/NumLiteralTests.v

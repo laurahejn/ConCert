@@ -5,7 +5,7 @@ From ConCert.Execution Require Import BoundedN.
 From ConCert.Execution Require Import Containers.
 From ConCert.Execution.Test Require Import LocalBlockchain.
 From QuickChick Require Import QuickChick.
-Import QcNotation. Import MonadNotation.
+Import QcNotation. Import MonadNotation. Import BindOptNotation.
 From Coq Require Import ZArith.
 From Coq Require Import List. Import ListNotations.
 
@@ -13,8 +13,10 @@ Import BoundedN.Stdpp.
 
 Global Definition AddrSize : N := (2^8)%N.
 Global Definition DepthFirst : bool := true.
-Global Instance LocalChainBase : ChainBase := LocalChainBase AddrSize.
-Global Instance ChainBuilder : ChainBuilderType := LocalChainBuilderImpl AddrSize DepthFirst.
+Global Instance LocalChainBase : ChainBase :=
+  LocalChainBase AddrSize.
+Global Instance ChainBuilder : ChainBuilderType :=
+  LocalChainBuilderImpl AddrSize DepthFirst.
 Notation "f 'o' g" := (Program.Basics.compose f g) (at level 50).
 
 Definition addr_of_Z (x : Z) := BoundedN.of_Z_const AddrSize x.
@@ -27,13 +29,15 @@ Definition person_2 : Address := addr_of_Z 12.
 Definition person_3 : Address := addr_of_Z 13.
 Definition person_4 : Address := addr_of_Z 14.
 Definition person_5 : Address := addr_of_Z 15.
-Definition contract_base_addr : Address := addr_of_N (@ContractAddrBase AddrSize).
+Definition contract_base_addr : Address :=
+  addr_of_N (@ContractAddrBase AddrSize).
 
 Definition test_chain_addrs_3 := [person_1; person_2; person_3].
 Definition test_chain_addrs_5 := test_chain_addrs_3 ++ [person_4; person_5].
 
 Definition empty_chain := lcb_initial AddrSize.
-Definition get_contracts (chain : LocalChainBuilder AddrSize ) := lc_contracts (lcb_lc chain).
+Definition get_contracts (chain : LocalChainBuilder AddrSize ) :=
+  lc_contracts (lcb_lc chain).
 
 Definition build_call {A : Type}
                       {ser : Serializable A}
@@ -108,7 +112,9 @@ Definition FMap_find_ {A B : Type}
   end.
 
 Close Scope string_scope.
-Fixpoint split_at_first_satisfying_fix {A : Type} (p : A -> bool) (l : list A) (acc : list A) : option (list A * list A) :=
+Fixpoint split_at_first_satisfying_fix {A : Type} (p : A -> bool)
+                                       (l : list A) (acc : list A)
+                                       : option (list A * list A) :=
   match l with
   | [] => None
   | x::xs => if p x
@@ -116,10 +122,12 @@ Fixpoint split_at_first_satisfying_fix {A : Type} (p : A -> bool) (l : list A) (
             else (split_at_first_satisfying_fix p xs (acc ++ [x]))
   end.
 
-Definition split_at_first_satisfying {A : Type} (p : A -> bool) (l : list A) : option (list A * list A) :=
+Definition split_at_first_satisfying {A : Type} (p : A -> bool) (l : list A)
+                                     : option (list A * list A) :=
   split_at_first_satisfying_fix p l [].
 
-(* Helper function for backtrack_result. It picks and removes an element from a list of result generators. *)
+(* Helper function for backtrack_result.
+   It picks and removes an element from a list of result generators. *)
 Fixpoint pickDrop {T E}
                   (default : E)
                   (xs : list (nat * G (result T E)))
@@ -133,8 +141,11 @@ Fixpoint pickDrop {T E}
           in (k', x', (k,x)::xs')
   end.
 
-(* Backtracking generator for results instead of Option. Works the same way as backtrack. *)
-Fixpoint backtrack_result_fix {T E} (default : E) (fuel : nat) (gs : list (nat * G (result T E))) : G (result T E) :=
+(* Backtracking generator for results instead of
+   Option. Works the same way as backtrack. *)
+Fixpoint backtrack_result_fix {T E} (default : E) (fuel : nat)
+                              (gs : list (nat * G (result T E)))
+                              : G (result T E) :=
   match fuel with
   | 0 => returnGen (Err default)
   | S fuel' => idx <- choose (0, fuel') ;;
@@ -146,11 +157,14 @@ Fixpoint backtrack_result_fix {T E} (default : E) (fuel : nat) (gs : list (nat *
         end
   end.
 
-Definition backtrack_result {T E} (default : E) (gs : list (nat * G (result T E))) : G (result T E) :=
+Definition backtrack_result {T E} (default : E)
+                            (gs : list (nat * G (result T E)))
+                            : G (result T E) :=
   backtrack_result_fix default (length gs) gs.
 
 (* retrieves the previous and next state of a ChainStep *)
-Definition chainstep_states {prev_bstate next_bstate} (step : ChainStep prev_bstate next_bstate) :=
+Definition chainstep_states {prev_bstate next_bstate}
+                            (step : ChainStep prev_bstate next_bstate) :=
   (prev_bstate, next_bstate).
 
 (* Utils for Show instances *)
@@ -180,7 +194,9 @@ Instance showFMap {A B : Type}
 Close Scope string_scope.
 Open Scope bool_scope.
 
-Definition get_contract_state (state : Type) `{Serializable state} env addr : option state :=
+Definition get_contract_state (state : Type)
+                              `{Serializable state} env addr
+                              : option state :=
   let cstates := env.(env_contract_states) in
   match cstates addr with
   | Some ser_state =>
@@ -192,12 +208,26 @@ Definition get_contract_state (state : Type) `{Serializable state} env addr : op
   end.
 
 (* Utils for Generators *)
+Notation "'GOpt' A" := (G (option A)) (at level 50).
+
+Notation " ' pat  <-- c1 ;; c2" :=
+  (@bindOpt _ _ _ _ c1 (fun x => match x with pat => c2 end))
+  (at level 61, pat pattern, c1 at next level, right associativity) : monad_scope.
+
 Definition elems_opt {A : Type} (l : list A) : GOpt A :=
   match l with
   | x::xs => liftM Some (elems_ x xs)
   | _ => returnGen None end.
 
-Definition returnGenSome {A : Type} (a : A) := returnGen (Some a).
+Definition returnGenSome {A : Type} (a : A) : GOpt A :=
+  returnGen (Some a).
+
+Definition liftOpt {A B : Type}
+                    (f : A -> B)
+                    (g : GOpt A)
+                    : GOpt B :=
+  a <-- g ;;
+  returnGenSome (f a).
 
 Definition liftOptGen {A : Type}
                       (g : G A)
@@ -209,7 +239,7 @@ Definition sampleFMapOpt {A B : Type}
                         `{countable.Countable A}
                         `{base.EqDecision A}
                          (m : FMap A B)
-                         : G (option (A * B)) :=
+                         : GOpt (A * B) :=
   let els := FMap.elements m in
   match els with
   | e :: _ => liftM Some (elems_ e els)
@@ -234,27 +264,31 @@ Definition sample2UniqueFMapOpt
                         `{base.EqDecision A}
                          (m : FMap A B)
                          : GOpt ((A * B) * (A * B)) :=
-  bindGenOpt (sampleFMapOpt m) (fun p1 =>
+  bindOpt (sampleFMapOpt m) (fun p1 =>
     let key1 := fst p1 in
     let val1 := snd p1 in
-    bindGenOpt (sampleFMapOpt (FMap.remove key1 m)) (fun p2 =>
+    bindOpt (sampleFMapOpt (FMap.remove key1 m)) (fun p2 =>
       returnGenSome (p1, p2)
     )
   ).
 
 Section AddressGenerators.
-  (* Although the type is GOpt ...) it will never generate None values.
-    Perhaps this is where we should use generators with property proof relevance? Future work... *)
-  Definition gBoundedNOpt (bound : N) : G (option (BoundedN.BoundedN bound)) :=
-    n <- arbitrarySized (N.to_nat bound) ;; (* we exploit that arbitrarySized n on nats automatically bounds the value by <= n *)
+  (* Although the type is GOpt ... it will never generate None values.
+    Perhaps this is where we should use generators with
+    property proof relevance? Future work... *)
+  Definition gBoundedNOpt (bound : N) : GOpt (BoundedN.BoundedN bound) :=
+    (* we exploit that arbitrarySized n on nats
+       automatically bounds the value by <= n *)
+    n <- arbitrarySized (N.to_nat bound) ;;
     returnGen (@decode_bounded bound (Pos.of_nat n)).
 
   Definition gBoundedN : G (BoundedN.BoundedN AddrSize) :=
     bn <- gBoundedNOpt AddrSize ;;
     returnGen match bn with
       | Some b => b
-      (** The None case should never happen since 'arbitrarySized' on AddrSize already ensures that
-          n <= AddrSized. **)
+      (** The None case should never happen since
+          'arbitrarySized' on AddrSize already ensures
+          that n <= AddrSized. *)
       | None => BoundedN.of_Z_const AddrSize 0
     end.
 
@@ -264,7 +298,8 @@ Section AddressGenerators.
 
   #[export]
   Instance genAddress : Gen (@Address LocalChainBase) := {|
-      (* I could have just written 'arbitrary' here, but this is more explicit; and i like explicit code *)
+      (* I could have just written 'arbitrary' here,
+         but this is more explicit; and I like explicit code *)
       arbitrary := @arbitrary (BoundedN.BoundedN AddrSize) genBoundedN
     |}.
 
@@ -288,23 +323,25 @@ Section AddressGenerators.
 
   (* Generator that returns random addresses in the user address space *)
   Definition gUserAddress : GOpt Address :=
-    bindGen (choose (0, (@ContractAddrBase AddrSize)-1)%N) (fun n => ret (@BoundedN.of_N AddrSize n)).
+    bindGen (choose (0, (@ContractAddrBase AddrSize)-1)%N)
+            (fun n => ret (@BoundedN.of_N AddrSize n)).
 
   (* Generator that returns random addresses in the contract address space *)
   Definition gContractAddress : GOpt Address :=
-    bindGen (choose ((@ContractAddrBase AddrSize), AddrSize-1)%N) (fun n => ret (@BoundedN.of_N AddrSize n)).
+    bindGen (choose ((@ContractAddrBase AddrSize), AddrSize-1)%N)
+            (fun n => ret (@BoundedN.of_N AddrSize n)).
 
   (* Generator that returns random addresses from [addrs] that are not in [ws].
-     Returns [zero_address] if the are no such addresses *)
+     Returns [zero_address] if there are no such addresses *)
   Definition gAddrWithout (ws addrs : list Address) :=
     let addrs_ := filter (fun a => negb (existsb (address_eqb a) ws)) addrs in
     elems_ zero_address addrs_.
 
   (* Generator that returns unique pairs of addresses from [addrs] *)
   Definition gUniqueAddrPair (addrs : list Address) : GOpt (Address * Address) :=
-    addr1 <- elems_opt addrs ;;
-    let addrs_ := filter (fun a => negb (address_eqb addr1 a)) addrs in
-    addr2 <- elems_opt addrs_ ;;
+    addr1 <-- elems_opt addrs ;;
+    let addrs_ := filter (fun a => address_neqb addr1 a) addrs in
+    addr2 <-- elems_opt addrs_ ;;
     returnGenSome (addr1, addr2).
 End AddressGenerators.
 
@@ -349,16 +386,21 @@ Definition optToVector {A : Type} (n : nat): GOpt A -> G (list A) :=
   in returnGen l'.
 
 (* Utils for QuickChick *)
-
-(* Little helper to avoid having to write out matches with "false ==> true" in None case all the time *)
-Definition isSomeCheck {A B : Type} `{Checkable B} (a : option A) (f : A -> B) : Checker :=
+Open Scope Checker_scope.
+(* Little helper to avoid having to write out matches
+   with "false ==> true" in None case all the time *)
+Definition isSomeCheck {A B : Type} `{Checkable B}
+                       (a : option A) (f : A -> B)
+                       : Checker :=
 match a with
   | Some v => checker (f v)
   | None => false ==> true
 end.
 
-(* A shallow way of embedding 'exists' in QC. Currently not very general, since we cant properly nest existPs
-   because the predicate function returns a bool, and not a Checker. Need to review if this is even possible. *)
+(* A shallow way of embedding 'exists' in QC.
+   Currently not very general, since we can't properly nest existPs
+   because the predicate function returns a bool, and not a Checker.
+   Need to review if this is even possible. *)
 Local Open Scope string_scope.
 Definition existsP {A prop : Type}
                   `{Checkable prop}
@@ -437,7 +479,7 @@ Definition repeatWith {A prop : Type}
 Definition repeatn (n : nat) (c : Checker) :=
   repeatWith (seq 0 n) (fun _ => c).
 
-(* Converts a discarded test into a succesful test *)
+(* Converts a discarded test into a successful test *)
 Definition discardToSuccess {prop} `{Checkable prop} (p : prop) : Checker :=
   mapTotalResult (fun res => match res.(ok) with
                              | None => updOk res (Some true)
@@ -455,8 +497,9 @@ Definition discardToSuccess {prop} `{Checkable prop} (p : prop) : Checker :=
 (* QuickChick (discardToSuccess false). *)
 (* *** Failed after 1 tests and 0 shrinks. (0 discards) *)
 
-(* discard-friendly variant of conjoin where discarded tests will NOT cause the conjoin
-   combinator to also result in a discard. Specifically, conjoin_no_discard [false==>true] tests succesfully,
+(* discard-friendly variant of conjoin where discarded tests will NOT
+   cause the conjoin combinator to also result in a discard. Specifically,
+   conjoin_no_discard [false==>true] tests successfully,
    whereas conjoin [false==>true] results in a discarded test. *)
 Definition conjoin_no_discard {prop} `{Checkable prop} (l : list prop) : Checker :=
   conjoin_map discardToSuccess l.

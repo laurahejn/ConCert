@@ -31,7 +31,7 @@ Section PiggyBankTypes.
   Record State :=
     build_state {
       balance : Amount;
-      owner : Address; 
+      owner : Address;
       piggyState : PiggyState
     }.
 

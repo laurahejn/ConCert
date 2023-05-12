@@ -1,22 +1,21 @@
-(* From MetaCoq Require Import utils. *)
 From Coq Require Import List.
 From Coq Require Import String.
 From Coq Require Import ZArith.
 
 From MetaCoq.Template Require Import All.
-From MetaCoq.Template Require Import Kernames.
-From ConCert.Utils Require Import StringExtra.
+From MetaCoq.Common Require Import Kernames.
+From RustExtraction Require Import StringExtra.
 From ConCert.Execution Require Monad.
 From ConCert.Execution Require Import Blockchain.
-From ConCert.Extraction Require Import Common.
-From MetaCoq.TypedExtraction Require Import Extraction.
-From MetaCoq.TypedExtraction Require Import Optimize.
-From MetaCoq.TypedExtraction Require Import ResultMonad.
-From MetaCoq.TypedExtraction Require Import Utils.
-From ConCert.Extraction Require Import RustExtract.
+From RustExtraction Require Import Common.
+From MetaCoq.Erasure.Typed Require Import Extraction.
+From MetaCoq.Erasure.Typed Require Import Optimize.
+From MetaCoq.Erasure.Typed Require Import ResultMonad.
+From MetaCoq.Erasure.Typed Require Import Utils.
+From RustExtraction Require Import RustExtract.
 From ConCert.Extraction Require Import SpecializeChainBase.
-From ConCert.Extraction Require Import PrettyPrinterMonad.
-From ConCert.Extraction Require Import Printing.
+From RustExtraction Require Import PrettyPrinterMonad.
+From RustExtraction Require Import Printing.
 
 Import MCMonadNotation.
 
@@ -29,7 +28,9 @@ Local Coercion bytestring.String.of_string : String.string >-> bytestring.string
 
 Module ConcordiumRemap.
 
-Definition lookup_const (TT : list (kername * bytestring.string)) (name : kername): option bytestring.string :=
+Definition lookup_const (TT : list (kername * bytestring.string))
+                        (name : kername)
+                        : option bytestring.string :=
   match find (fun '(key, _) => eq_kername key name) TT with
   | Some (_, val) => Some val
   | None => None

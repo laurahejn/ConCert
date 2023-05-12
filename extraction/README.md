@@ -43,8 +43,8 @@ Some highlights from [theories](theories/):
 * [ErasureCorrectness.v](theories/ErasureCorrectness.v) -- Correctness lemmas for definitions from [Erasure.v](theories/Erasure.v), proving that our erasure produces a well-formed erased environment.
 * [Extraction.v](theories/Extraction.v) -- High-level interface to extraction. Provides different pipelines for doing extraction with different trusted computing bases.
 * [ExtractionCorrectness.v](theories/ExtractionCorrectness.v) -- Top-level correctness theorem relating the stages.
-* [Optimize.v](theories/Optimize.v) -- Optimisations (dead argument elimination, logical parameters elimination) on `λ□` terms.
-* [OptimizeCorrectness.v](theories/OptimizeCorrectness.v) -- Correctness of optimisation (dead argument elimination).
+* [Optimize.v](theories/Optimize.v) -- Optimizations (dead argument elimination, logical parameters elimination) on `λ□` terms.
+* [OptimizeCorrectness.v](theories/OptimizeCorrectness.v) -- Correctness of optimization (dead argument elimination).
 * [CertifyingEta.v](theories/CertifyingEta.v) -- An eta-expansion procedure.
 * [CertifyingInlinig.v](theories/CertifyingInlinig.v) -- An inlining procedure.
 * [CertifyingBeta.v](theories/ertifyingBeta.v) -- A procedure that finds an evalues redexes (if the reduction leads to new redexes, these are not reduced further)
@@ -62,6 +62,5 @@ Some highlights of extracted examples:
 * [CounterDepCertifiedLiquidity.v](../examples/counter/extraction/CounterDepCertifiedLiquidity.v) -- A counter contract that uses propositions to filter out the correct input. It also serves as an example application of the certifying eta-expansion.
 * [CounterRefinementTypes](../examples/counter/extraction/CounterRefTypesMidlang.v) -- A counter contract that uses refinement types for expressing partial functional correctness.
 * [CrowdfundingCertifiedExtraction.v](../examples/crowdfunding/CrowdfundingCertifiedExtraction.v) -- Machinery for extraction of a crowdfunding contract.
-* [ElmExtractTests.v](tests/ElmExtractTests.v) -- Several examples of extraction into Elm.
 * [EscrowMidlang.v](../examples/escrow/extraction/EscrowMidlang.v) -- Extraction of the escrow contract defined in [Escrow.v](../examples/escrow/Escrow.v) to Midlang.
 * [StackInterpreterExtract.v](../examples/stackInterpreter/StackInterpreterExtract.v) -- An interpreter for a simple stack-based language.

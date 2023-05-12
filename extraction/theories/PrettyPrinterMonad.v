@@ -1,9 +1,9 @@
 From Coq Require Import List.
 From Coq Require Import Ascii.
 From Coq Require Import String.
-From MetaCoq.Template Require Import monad_utils.
+From MetaCoq.Utils Require Import monad_utils.
 From MetaCoq.SafeChecker Require Import PCUICErrors.
-From MetaCoq.TypedExtraction Require Import ResultMonad.
+From MetaCoq.Erasure.Typed Require Import ResultMonad.
 From ConCert.Extraction Require Import Common.
 
 Import monad_utils.MCMonadNotation.
@@ -25,7 +25,8 @@ Notation s_to_bs := bytestring.String.of_string.
 
 Local Coercion bs_to_s : bytestring.string >-> string.
 
-Definition PrettyPrinter A := PrettyPrinterState -> result (A * PrettyPrinterState) string.
+Definition PrettyPrinter A :=
+  PrettyPrinterState -> result (A * PrettyPrinterState) string.
 
 #[export]
 Instance Monad_PrettyPrinter : Monad PrettyPrinter :=
@@ -163,7 +164,8 @@ Definition wrap_EnvCheck {astr A} f (ec : EnvCheck astr A) : PrettyPrinter A :=
   end.
 
 Module P := PCUICAst.
-Definition wrap_typing_result {A} (Σ : P.PCUICEnvironment.global_env) (tr : typing_result A) : PrettyPrinter A :=
+Definition wrap_typing_result {A} (Σ : P.PCUICEnvironment.global_env)
+                              (tr : typing_result A) : PrettyPrinter A :=
   match tr with
   | Checked et => ret et
   | TypeError te =>

@@ -25,7 +25,7 @@ Open Scope Z_scope.
 Definition gAccountWithBalance (e : Env)
                                (gAccOpt : GOpt Address)
                                : GOpt (Address * Amount) :=
-  addr <- suchThatMaybeOpt gAccOpt (fun addr => 0 <? e.(env_account_balances) addr) ;;
+  addr <-- suchThatMaybeOpt gAccOpt (fun addr => 0 <? e.(env_account_balances) addr) ;;
   returnGenSome (addr, e.(env_account_balances) addr).
 
 Definition gEscrowMsg (e : Env) : GOpt Action :=
@@ -35,11 +35,11 @@ Definition gEscrowMsg (e : Env) : GOpt Action :=
           act_from := caller;
           act_body := act_call contract_addr amount (@serialize Escrow.Msg _ msg)
         |} in
-  state <- returnGen (get_contract_state Escrow.State e contract_addr) ;;
+  state <-- returnGen (get_contract_state Escrow.State e contract_addr) ;;
   let buyer := state.(buyer) in
   let seller := state.(seller) in
-  (* pick one generator uniformly at random from the given list.
-     backtrack if one fails. *)
+  (* Pick one generator uniformly at random from the given list.
+     Backtrack if one fails. *)
   backtrack [
     (* commit money *)
     (1%nat,
@@ -68,7 +68,7 @@ Definition gEscrowMsgBetter (e : Env) : GOpt Action :=
           act_from := caller;
           act_body := act_call contract_addr amount (@serialize Escrow.Msg _ msg)
   |} in
-  state <- returnGen (get_contract_state Escrow.State e contract_addr) ;;
+  state <-- returnGen (get_contract_state Escrow.State e contract_addr) ;;
   let buyer := state.(buyer) in
   let seller := state.(seller) in
   match state.(next_step) with

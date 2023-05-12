@@ -161,7 +161,7 @@ Proof.
 Qed.
 
 (* If a state has a contract state on some addr then any other state
-    reachable through the first state must also have the some contracts
+    reachable through the first state must also have the some contract
     state on the same addr *)
 Lemma reachable_through_contract_state : forall from to addr cstate,
   reachable_through from to -> env_contract_states from addr = Some cstate ->
@@ -251,9 +251,9 @@ Definition receiver_can_receive_transfer (bstate : ChainState) act_body :=
   end.
 
 (* This axiom states that for any reachable state and any contract it is
-    decidable wether or there is an address where the contract can be deployed to.
+    decidable whether or not there is an address where the contract can be deployed to.
    This is not provable in general with the assumption ChainBase makes about
-    addresses and the function address_is_contract. However this should be
+    addresses and the function address_is_contract. However, this should be
     provable in any sensible instance of ChainBase *)
 Axiom deployable_address_decidable : forall bstate wc setup act_origin act_from amount,
   reachable bstate ->
@@ -396,7 +396,7 @@ Proof.
   now constructor.
 Qed.
 
-(* A subset of a emptyable queu is also emptyable *)
+(* A subset of an emptyable queue is also emptyable *)
 Lemma emptyable_cons : forall x l,
   emptyable (x :: l) -> emptyable l.
 Proof.
@@ -451,7 +451,7 @@ Proof.
       apply reachable_step in step as reachable_mid; eauto.
       apply IHqueue in reachable_mid as [to [reachable_through [P_to queue_to]]]; eauto.
       exists to.
-      intuition.
+      destruct_and_split; auto.
       eauto.
       eapply (HP_preserved bstate mid); eauto.
       now right.
@@ -607,11 +607,11 @@ Proof.
     + apply NPeano.Nat.sub_0_le in slot_hit.
       rewrite_environment_equiv. cbn. lia.
   - specialize forward_time_exact with (slot := slot) as
-      (bstate' & header & reach' & header_valid & slot_hit' & queue' & env_eq);
-      try easy.
+      (bstate' & header & reach' & header_valid & slot_hit' & queue' & env_eq); eauto.
+    lia.
     do 2 eexists.
-    split; eauto.
-    intuition.
+    destruct_and_split; eauto.
+    lia.
 Qed.
 
 (* Lemma showing that there exists a future ChainState
@@ -698,7 +698,7 @@ Proof.
 Qed.
 
 (* Lemma showing that if an action in the queue is invalid then
-    there exists a future ChainState witht the same environment
+    there exists a future ChainState with the same environment
     where that action is discarded *)
 Lemma discard_invalid_action : forall bstate act acts,
   reachable bstate ->
@@ -723,7 +723,7 @@ Proof.
 Qed.
 
 (* Lemma showing that for any permutation of the queue there
-    exists a future ChainState witht the same environment
+    exists a future ChainState with the same environment
     end the queue permuted *)
 Lemma permute_queue : forall bstate acts acts_permuted,
   reachable bstate ->
@@ -892,7 +892,7 @@ Local Ltac update_chainstate bstate1 bstate2 :=
   end;
   only_on_match ltac:(progress update_chainstate bstate1 bstate2).
 
-(* Tactic for updating goal and all occurences of an old ChainState
+(* Tactic for updating goal and all occurrences of an old ChainState
     after adding a future ChainState to the environment. *)
 Ltac update_all :=
   match goal with

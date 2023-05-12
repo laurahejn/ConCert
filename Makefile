@@ -1,4 +1,4 @@
-all: utils execution embedding typed-extraction extraction
+all: utils execution embedding extraction
 .PHONY: all
 
 utils:
@@ -13,11 +13,7 @@ embedding: utils execution
 	+make -C embedding
 .PHONY: embedding
 
-typed-extraction:
-	+make -C typed-extraction
-.PHONY: typed-extraction
-
-extraction: utils execution typed-extraction
+extraction: utils execution
 	+make -C extraction
 .PHONY: extraction
 
@@ -29,7 +25,6 @@ clean:
 	+make -C utils clean
 	+make -C execution clean
 	+make -C embedding clean
-	+make -C typed-extraction clean
 	+make -C extraction clean
 	+make -C examples clean
 	rm -rf docs
@@ -39,17 +34,31 @@ install: all
 	+make -C utils install
 	+make -C execution install
 	+make -C embedding install
-	+make -C typed-extraction install
 	+make -C extraction install
 .PHONY: install
 
-uninstall: all
+uninstall:
 	+make -C utils uninstall
 	+make -C execution uninstall
 	+make -C embedding uninstall
-	+make -C typed-extraction uninstall
 	+make -C extraction uninstall
-.PHONY: uninstall
+
+vos:
+	+make -C utils vos
+	+make -C execution vos
+	+make -C embedding vos
+	+make -C extraction vos
+	+make -C examples vos
+
+quick:
+	+make -C utils quick
+	+make -C execution quick
+	+make -C embedding quick
+	+make -C extraction quick
+	+make -C examples quick
+
+QuickChick: examples
+	+make -C examples QuickChick
 
 test-extraction:
 	+make -C extraction test-extraction
@@ -131,10 +140,7 @@ html: all
 		-R embedding/theories ConCert.Embedding \
 		-R embedding/extraction ConCert.Embedding.Extraction \
 		-R embedding/examples ConCert.Embedding.Examples \
-		-R typed-extraction/theories MetaCoq.TypedExtraction \
-		-R typed-extraction/tests MetaCoq.TypedExtraction.Tests \
 		-R extraction/theories ConCert.Extraction \
-		-R extraction/plugin/theories ConCert.Extraction \
 		-R extraction/tests ConCert.Extraction.Tests \
 		-R examples/eip20 ConCert.Examples.EIP20 \
 		-R examples/bat ConCert.Examples.BAT \
@@ -151,6 +157,7 @@ html: all
 		-R examples/boardroomVoting ConCert.Examples.BoardroomVoting \
 		-R examples/counter ConCert.Examples.Counter \
 		-R examples/crowdfunding ConCert.Examples.Crowdfunding \
+		-R examples/piggybank ConCert.Examples.PiggyBank \
 		-d docs `find . -type f \( -wholename "*theories/*" -o -wholename "*examples/*" -o -wholename "*extraction/*" -o -wholename "*test/*" \) -name "*.v" ! -name "AllTests.v" ! -wholename "./_opam/*"`
 	cp extra/resources/coqdocjs/*.js docs
 	cp extra/resources/coqdocjs/*.css docs

@@ -1,6 +1,7 @@
 # ConCert
 [![Build](https://github.com/AU-COBRA/ConCert/actions/workflows/build.yml/badge.svg)](https://github.com/AU-COBRA/ConCert/actions/workflows/build.yml)
-![GitHub](https://img.shields.io/github/license/AU-COBRA/ConCert)
+[![GitHub](https://img.shields.io/github/license/AU-COBRA/ConCert)](https://github.com/AU-COBRA/ConCert/blob/master/LICENSE)
+[![Documentation](https://img.shields.io/github/deployments/au-cobra/ConCert/github-pages?label=docs)](https://au-cobra.github.io/ConCert/)
 
 A framework for smart contract verification in Coq.
 
@@ -13,7 +14,7 @@ ConCert can find real-world attacks as explained
 ## How to build
 
 
-Our development works with Coq 8.16 and depends on MetaCoq, std++, and coq-equations.
+Our development works with Coq 8.17 and depends on MetaCoq, and std++.
 The tests depend on QuickChick.
 The dependencies can be installed through `opam`.
 
@@ -22,25 +23,21 @@ To set up a switch with the necessary dependencies run the following commands fr
 ```bash
 git clone https://github.com/AU-COBRA/ConCert.git
 cd ConCert
-git submodule init
-git submodule update
 opam switch create . 4.10.2 --repositories default,coq-released=https://coq.inria.fr/opam/released --deps-only
 eval $(opam env)
 ```
 
-If Coq 8.16 is already installed, run
+If Coq 8.17 is already installed, run
 
 ```bash
 git clone https://github.com/AU-COBRA/ConCert.git
 cd ConCert
-git submodule init
-git submodule update
 opam repo add coq-released https://coq.inria.fr/opam/released
 opam install ./coq-concert.opam --deps-only
 ```
 
 After completing the procedures above, run `make` to build the development, and `make html` to build the documentation.
-The documentation will be located in the docs folder after `make html`.
+The documentation will be located in the `docs` folder after `make html`.
 Example contracts can be built by running `make examples`.
 
 ## Structure of the project
@@ -52,9 +49,6 @@ The [embedding](embedding/) folder contains the development of the verified embe
 The [execution](execution/) folder contains the formalization of the smart
 contract execution layer, which allows reasoning about, and property-based testing of, interacting contracts. The [test](execution/test) folder contains the property-based testing framework. The key generators used for automatically generating blockchain execution traces for testing can be found in [TraceGens.v](execution/test/TraceGens.v). The testing framework was developed as part of a Master's Thesis at Aarhus University, and the thesis detailing (an earlier state of) the development can be found [here](https://github.com/mikkelmilo/ConCert-QuickChick-Testing-Thesis).
 
-The [typed-extraction](https://github.com/AU-COBRA/typed-extraction) submodule contains an implementation of the extraction pipeline based on MetaCoq's **verified erasure** extended with an erasure procedure for types.
-It also features *certifying*(proof-generating) pre-processing steps and verified dead argument elimination.
-
 The [extraction](extraction/) folder contains an extraction pipeline for smart contract languages.
 Currently, we support smart contract languages Liquidity and CameLIGO, and general-purpose languages Elm and Rust as targets.
 Pretty-printers to these languages are implemented directly in Coq.
@@ -64,7 +58,7 @@ The [examples](examples/) folder contains examples of smart contract implementat
 
 ## Notes for developers
 
-The project consists of five subprojects: `embedding`, `execution`, `extraction`, `typed-extraction`, and `examples` located in the corresponding folders.
+The project consists of four subprojects: `embedding`, `execution`, `extraction`, and `examples` located in the corresponding folders.
 Each subproject has its own `_CoqProject` file and `Makefile`.
 The `Makefile` in the root folder dispatches the calls to the corresponding subproject.
 
@@ -80,7 +74,7 @@ We use the standard Coqdoc with improved styles and scripts of [CoqdocJS](https:
   <br>
   <details>
     <summary>Cite paper</summary>
-    
+
     ```
     @article{annenkov_milo_nielsen_spitters_2022,
       author={ANNENKOV, DANIL and MILO, MIKKEL and NIELSEN, JAKOB BOTSCH and SPITTERS, BAS},
@@ -100,7 +94,7 @@ We use the standard Coqdoc with improved styles and scripts of [CoqdocJS](https:
   <br>
   <details>
     <summary>Cite paper</summary>
-    
+
     ```
     @InProceedings{milo_et_al:OASIcs.FMBC.2022.2,
       author =	{Milo, Mikkel and Nielsen, Eske Hoy and Annenkov, Danil and Spitters, Bas},
@@ -124,7 +118,30 @@ We use the standard Coqdoc with improved styles and scripts of [CoqdocJS](https:
   </details>
 - ["Formalising Decentralised Exchanges in Coq"](https://arxiv.org/abs/2203.08016).
   Eske Hoy Nielsen, Danil Annenkov and Bas Spitters.
-  Preprint.
+  CPP 2023.
+  <br>
+  <details>
+    <summary>Cite paper</summary>
+
+    ```
+    @inproceedings{10.1145/3573105.3575685,
+        author = {Nielsen, Eske Hoy and Annenkov, Danil and Spitters, Bas},
+        title = {Formalising Decentralised Exchanges in Coq},
+        year = {2023},
+        isbn = {9798400700262},
+        publisher = {Association for Computing Machinery},
+        address = {New York, NY, USA},
+        url = {https://doi.org/10.1145/3573105.3575685},
+        doi = {10.1145/3573105.3575685},
+        booktitle = {Proceedings of the 12th ACM SIGPLAN International Conference on Certified Programs and Proofs},
+        pages = {290–302},
+        numpages = {13},
+        keywords = {smart contracts, Coq, decentralized finance, blockchain, software correctness},
+        location = {Boston, MA, USA},
+        series = {CPP 2023}
+    }
+    ```
+  </details>
 - ["Code Extraction from Coq to ML-like languages"](papers/ML-family.pdf).
   Danil Annenkov, Mikkel Milo and Bas Spitters.
   ["ML'21"](https://icfp21.sigplan.org/details/mlfamilyworkshop-2021-papers/8/Code-Extraction-from-Coq-to-ML-like-languages) at ICFP'21.
@@ -226,7 +243,7 @@ We use the standard Coqdoc with improved styles and scripts of [CoqdocJS](https:
   <br>
   <details>
     <summary>Cite paper</summary>
-    
+
     ```
     @inproceedings{smart-contract-interactions,
       author    = {Jakob Botsch Nielsen and
@@ -244,56 +261,3 @@ We use the standard Coqdoc with improved styles and scripts of [CoqdocJS](https:
 
 ## Videos
 A video collection, presenting various parts of ConCert can be found on [YouTube](https://www.youtube.com/playlist?list=PLWcJeGdOHpbxb_DhcfppHRrZKW7wPO9qQ).
-
-### Citing the papers
-
-```
-@article{annenkov_milo_nielsen_spitters_2022,
-   author={ANNENKOV, DANIL and MILO, MIKKEL and NIELSEN, JAKOB BOTSCH and SPITTERS, BAS},
-   title={{Extracting functional programs from Coq, in Coq}},
-   volume={32},
-   DOI={10.1017/S0956796822000077},
-   journal={Journal of Functional Programming},
-   publisher={Cambridge University Press},
-   year={2022},
-   pages={e11}
-   }
-
-@inproceedings{ConCert-extraction-testing,
-  author = {Annenkov, Danil and Milo, Mikkel and Nielsen, Jakob Botsch and Spitters, Bas},
-  title = {Extracting Smart Contracts Tested and Verified in Coq},
-  year = {2021},
-  isbn = {9781450382991},
-  publisher = {Association for Computing Machinery},
-  url = {https://doi.org/10.1145/3437992.3439934},
-  doi = {10.1145/3437992.3439934},
-  pages = {105–121},
-  numpages = {17},
-  location = {Virtual, Denmark},
-  series = {CPP 2021}
-}
-
-@article{ConCert,
-  title={ConCert: a smart contract certification framework in Coq},
-  ISBN={9781450370974},
-  url={https://dx.doi.org/10.1145/3372885.3373829},
-  DOI={10.1145/3372885.3373829},
-  journal={Proceedings of the 9th ACM SIGPLAN International Conference on Certified Programs and Proofs},
-  publisher={ACM},
-  author={Annenkov, Danil and Nielsen, Jakob Botsch and Spitters, Bas},
-  year={2020},
-  month={Jan}
-}
-
-@inproceedings{smart-contract-interactions,
-  author    = {Jakob Botsch Nielsen and
-               Bas Spitters},
-  title     = {Smart Contract Interactions in Coq},
-  booktitle = {{FM} Workshops {(1)}},
-  series    = {Lecture Notes in Computer Science},
-  volume    = {12232},
-  pages     = {380--391},
-  publisher = {Springer},
-  year      = {2019}
-}
-```

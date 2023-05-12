@@ -2,15 +2,15 @@ From ConCert.Execution Require Import Blockchain.
 From ConCert.Execution Require Import Serializable.
 From ConCert.Execution Require Monad.
 From ConCert.Execution Require OptionMonad.
-From ConCert.Extraction Require Import Common.
-From ConCert.Extraction Require Import ElmExtract.
-From MetaCoq.TypedExtraction Require Import CertifyingInlining.
-From MetaCoq.TypedExtraction Require Import Extraction.
-From MetaCoq.TypedExtraction Require Import ResultMonad.
+From ElmExtraction Require Import Common.
+From ElmExtraction Require Import ElmExtract.
+From MetaCoq.Erasure.Typed Require Import CertifyingInlining.
+From MetaCoq.Erasure.Typed Require Import Extraction.
+From MetaCoq.Erasure.Typed Require Import ResultMonad.
 From ConCert.Extraction Require Import SpecializeChainBase.
-From ConCert.Extraction Require Import PrettyPrinterMonad.
+From ElmExtraction Require Import PrettyPrinterMonad.
 From ConCert.Examples.Escrow Require Import Escrow.
-From MetaCoq.Template Require Import Kernames.
+From MetaCoq.Common Require Import Kernames.
 From MetaCoq.Template Require Import All.
 From Coq Require Import List.
 From Coq Require Import String.
@@ -24,7 +24,7 @@ Instance EscrowMidlangBoxes : ElmPrintConfig :=
      type_box_symbol := "()";
      any_type_symbol := "()";
      false_elim_def := "false_rec ()";
-     print_full_names := true; (* full names to avoid clashes*)|}.
+     print_full_names := true; (* full names to avoid clashes *)|}.
 
 Definition TT_escrow : list (kername * string) :=
   [ remap <%% bool %%> "Bool"
@@ -106,25 +106,26 @@ Definition escrow_extract :=
                            ++ map fst TT_escrow)).
 
 Definition midlang_prelude :=
-  ["import Basics exposing (..)";
-  "import Blockchain exposing (..)";
-  "import Bool exposing (..)";
-  "import Int exposing (..)";
-  "import Maybe exposing (..)";
-  "import Order exposing (..)";
-  "import Transaction exposing (..)";
-  "import Tuple exposing (..)";
-  "";
-  "-- some dummy definitions (will be remapped properly in the future)";
-  "type AccountAddress = Int";
-  "type ConCertAction = Act_transfer Int Z";
-  "type ConCertCallContext = CCtx Unit";
-  "type ConCertChain = CChain Unit";
-  "ctx_from ctx = 0";
-  "ctx_contract_address _ = 0";
-  "ctx_contract_balance _ = (Zpos (XO XH))";
-  "ctx_amount ctx = (Zpos (XO XH))";
-  "current_slot _ = O"].
+  [ "import Basics exposing (..)";
+    "import Blockchain exposing (..)";
+    "import Bool exposing (..)";
+    "import Int exposing (..)";
+    "import Maybe exposing (..)";
+    "import Order exposing (..)";
+    "import Transaction exposing (..)";
+    "import Tuple exposing (..)";
+    "";
+    "-- some dummy definitions (will be remapped properly in the future)";
+    "type AccountAddress = Int";
+    "type ConCertAction = Act_transfer Int Z";
+    "type ConCertCallContext = CCtx Unit";
+    "type ConCertChain = CChain Unit";
+    "ctx_from ctx = 0";
+    "ctx_contract_address _ = 0";
+    "ctx_contract_balance _ = (Zpos (XO XH))";
+    "ctx_amount ctx = (Zpos (XO XH))";
+    "current_slot _ = O"
+  ].
 
 MetaCoq Run
         match escrow_extract with

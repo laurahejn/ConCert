@@ -1,10 +1,10 @@
-(** * Extraction of a counter contract with dependent types (propositions) **)
+(** * Extraction of a counter contract with dependent types (propositions) *)
 
 (** A version of the counter contract that uses propositions to restrict the input.
     We also demonstrate how one can use the certifying eta-expansion to make sure
-    that constants and constructors are applied to all logial arguments *)
+    that constants and constructors are applied to all logical arguments *)
 
-From MetaCoq.Template Require Import Kernames.
+From MetaCoq.Common Require Import Kernames.
 From MetaCoq.Template Require Import All.
 From ConCert.Embedding Require Import Notations.
 From ConCert.Embedding.Extraction Require Import PreludeExt.
@@ -13,7 +13,7 @@ From ConCert.Execution Require Import ResultMonad.
 From ConCert.Extraction Require Import LiquidityExtract.
 From ConCert.Extraction Require Import LiquidityPretty.
 From ConCert.Extraction Require Import Common.
-From MetaCoq.TypedExtraction Require Import CertifyingEta.
+From MetaCoq.Erasure.Typed Require Import CertifyingEta.
 From Coq Require Import ZArith.
 From Coq Require Import Bool.
 From Coq Require Import String.
@@ -37,7 +37,7 @@ Module Counter.
   Definition init (ctx : SimpleCallCtx)
                   (setup : Z * address)
                   : result storage Error :=
-    let ctx' := ctx in (* prevents optimisations from removing unused [ctx] *)
+    let ctx' := ctx in (* prevents optimizations from removing unused [ctx] *)
     Ok setup.
 
   Inductive msg :=
@@ -73,7 +73,7 @@ Module Counter.
     end.
 
   (** A version of the counter with [inc_balance] applied only partially.
-      Requires eta-expansion for deboxing, because the last argument is logial. *)
+      Requires eta-expansion for deboxing, because the last argument is logical. *)
   Definition counter_partially_applied (msg : msg)
                                        (st : storage)
                                        : result (list operation * storage) Error :=

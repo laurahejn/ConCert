@@ -1,11 +1,11 @@
 From ConCert.Examples.StackInterpreter Require Import StackInterpreter.
-From ConCert.Extraction Require Import RustExtract.
+From RustExtraction Require Import RustExtract.
+From RustExtraction Require Import Printing.
 From ConCert.Extraction Require Import Common.
-From ConCert.Extraction Require Import Printing.
 From ConCert.Extraction Require Import ConcordiumExtract.
-From ConCert.Utils Require Import StringExtra.
+From RustExtraction Require Import StringExtra.
 From MetaCoq.Template Require Import All.
-From MetaCoq.PCUIC Require Import PCUICToTemplate.
+From MetaCoq.TemplatePCUIC Require Import PCUICToTemplate.
 From Coq Require Import String.
 From Coq Require Import List.
 From Coq Require Import ZArith.

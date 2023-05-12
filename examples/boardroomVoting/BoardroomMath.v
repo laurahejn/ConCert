@@ -34,12 +34,12 @@ Class BoardroomAxioms {A : Type} :=
 
     order_ge_2 : order >= 2;
 
-    elmeq_equiv :> Equivalence elmeq;
-    add_proper :> Proper (elmeq ==> elmeq ==> elmeq) add;
-    mul_proper :> Proper (elmeq ==> elmeq ==> elmeq) mul;
-    opp_proper :> Proper (elmeq ==> elmeq) opp;
-    inv_proper :> Proper (elmeq ==> elmeq) inv;
-    pow_base_proper :> Proper (elmeq ==> eq ==> elmeq) pow;
+    elmeq_equiv :: Equivalence elmeq;
+    add_proper :: Proper (elmeq ==> elmeq ==> elmeq) add;
+    mul_proper :: Proper (elmeq ==> elmeq ==> elmeq) mul;
+    opp_proper :: Proper (elmeq ==> elmeq) opp;
+    inv_proper :: Proper (elmeq ==> elmeq) inv;
+    pow_base_proper :: Proper (elmeq ==> eq ==> elmeq) pow;
     pow_exp_proper a :
       ~(elmeq a zero) -> Proper (expeq ==> elmeq) (pow a);
 
@@ -155,7 +155,7 @@ Class DiscreteLog {A : Type} (field : BoardroomAxioms A) (g : Generator field) :
   {
     (* This is computationally intractable, but we still require it for ease of specification *)
     log : A -> Z;
-    log_proper :> Proper (elmeq ==> expeq) log;
+    log_proper :: Proper (elmeq ==> expeq) log;
     pow_log a :
       a !== 0 ->
       generator ^ (log a) == a;
@@ -321,8 +321,9 @@ Section WithBoardroomAxioms.
     induction xs as [|x xs IH]; cbn in *; auto.
     - split; auto.
     - split.
-      + intros.
-        apply int_domain; intuition.
+      + intros [].
+        apply int_domain; auto.
+        now apply IH.
       + intros xprod.
         split.
         * intros eq; rewrite eq in *; rewrite mul_0_l in xprod.
@@ -805,7 +806,7 @@ End WithBoardroomAxioms.
 Module Zp.
   Local Open Scope Z.
 
-  (* Look at the definition of [mod] in the Coq's StdLib, it probably have changed. *)
+  (* Look at the definition of [mod] in Coq's StdLib, it probably has changed. *)
   Fixpoint mod_pow_pos_aux (a : Z) (x : positive) (m : Z) (r : Z) : Z :=
     match x with
     | x~0%positive => mod_pow_pos_aux (a * a mod m) x m r
@@ -1611,8 +1612,11 @@ Module BigZp.
   #[local]
   Hint Rewrite BigN.spec_of_pos : nsimpl.
 
+  Coercion BigZ.to_Z : BigZ.t_ >-> Z.
+
   Lemma spec_mod_pow_pos_aux a x p r :
-    [mod_pow_pos_aux a x p r] = Zp.mod_pow_pos_aux [a] x [p] [r].
+    BigZ.to_Z (mod_pow_pos_aux a x p r) =
+    Zp.mod_pow_pos_aux a x p r.
   Proof.
     revert a p r.
     induction x; intros a p r; cbn in *.
@@ -1627,7 +1631,8 @@ Module BigZp.
   Hint Rewrite spec_mod_pow_pos_aux : zsimpl.
 
   Lemma spec_mod_pow_pos a x p :
-    [mod_pow_pos a x p] = Zp.mod_pow_pos [a] x [p].
+    BigZ.to_Z (mod_pow_pos a x p) =
+    Zp.mod_pow_pos a x p.
   Proof. apply spec_mod_pow_pos_aux. Qed.
 
   #[local]
@@ -1635,18 +1640,19 @@ Module BigZp.
 
   Lemma spec_egcd_aux n r0 a0 b0 r1 a1 b1 :
     let (x, y) := egcd_aux n r0 a0 b0 r1 a1 b1 in
-    ([x], [y]) = Egcd.egcd_aux n [r0] [a0] [b0] [r1] [a1] [b1].
+    (BigZ.to_Z x, BigZ.to_Z y) =
+    Egcd.egcd_aux n r0 a0 b0 r1 a1 b1.
   Proof.
     revert r0 a0 b0 r1 a1 b1.
     induction n as [|n IH]; [easy|]; intros r0 a0 b0 r1 a1 b1.
     cbn.
     pose proof (BigZ.spec_div_eucl r0 r1) as H.
     destruct (BigZ.div_eucl r0 r1) as [q r].
-    destruct (Z.div_eucl [r0] [r1]) as [q' r'].
+    destruct (Z.div_eucl r0 r1) as [q' r'].
     inversion H; subst.
     rewrite BigZ.spec_eqb.
     cbn.
-    destruct ([r] =? 0)%Z; [easy|].
+    destruct (r =? 0)%Z; [easy|].
     rewrite <- !BigZ.spec_mul, <- !BigZ.spec_sub.
     apply IH.
   Qed.
@@ -1656,31 +1662,31 @@ Module BigZp.
 
   Lemma spec_egcd a b :
     let (x, y) := egcd a b in
-    ([x], [y]) = Egcd.egcd [a] [b].
+    (BigZ.to_Z x, BigZ.to_Z y) = Egcd.egcd a b.
   Proof.
     unfold egcd, Egcd.egcd.
     autorewrite with zsimpl.
-    change [0] with 0%Z.
+    change (BigZ.to_Z 0) with 0%Z.
     destruct (_ =? _)%Z; [now autorewrite with zsimpl|].
     destruct (_ =? _)%Z; [now autorewrite with zsimpl|].
     destruct (_ <? _)%Z.
     all: rewrite <- !BigZ.spec_abs.
-    all: change 1%Z with [1].
-    all: change 0%Z with [0].
+    all: change 1%Z with (BigZ.to_Z 1).
+    all: change 0%Z with (BigZ.to_Z 0).
     all:
       repeat
         match goal with
         | [|- context[egcd_aux ?n ?r0 ?a0 ?b0 ?r1 ?a1 ?b1]] =>
           pose proof (spec_egcd_aux n r0 a0 b0 r1 a1 b1);
             destruct (egcd_aux n r0 a0 b0 r1 a1 b1),
-                     (Egcd.egcd_aux n [r0] [a0] [b0] [r1] [a1] [b1])
+                     (Egcd.egcd_aux n r0 a0 b0 r1 a1 b1)
         end.
     all: inversion H.
     all: now autorewrite with zsimpl.
   Qed.
 
   Lemma spec_mod_inv a p :
-    [mod_inv a p] = Zp.mod_inv [a] [p].
+    BigZ.to_Z (mod_inv a p) = Zp.mod_inv a p.
   Proof.
     unfold mod_inv, Zp.mod_inv.
     pose proof (spec_egcd a p).
@@ -1693,7 +1699,7 @@ Module BigZp.
   Hint Rewrite spec_mod_inv : zsimpl.
 
   Lemma spec_mod_pow a x p :
-    [mod_pow a x p] = Zp.mod_pow [a] x [p].
+    BigZ.to_Z (mod_pow a x p) = Zp.mod_pow a x p.
   Proof.
     unfold mod_pow, Zp.mod_pow.
     now destruct x; autorewrite with zsimpl.
@@ -1726,8 +1732,8 @@ Module BigZp.
          add a a' := (a + a') mod p;
          mul a a' := (a * a') mod p;
          opp a := p - a;
-         inv a := [mod_inv (BigZ.of_Z a) (BigZ.of_Z p)];
-         pow a e := [mod_pow (BigZ.of_Z a) e (BigZ.of_Z p)];
+         inv a := BigZ.to_Z (mod_inv (BigZ.of_Z a) (BigZ.of_Z p));
+         pow a e := BigZ.to_Z (mod_pow (BigZ.of_Z a) e (BigZ.of_Z p));
          order := p;
       |}.
     - intros x y; apply Z.eqb_spec.
